@@ -1,0 +1,51 @@
+public class MergeAccountsHandler {
+    
+    @InvocableMethod(label='Merge Accounts')
+    public static void mergeAccounts(List<AccountWrapper> accountWrappers) {
+        List<Account> accountsToMerge = new List<Account>();
+        
+        for(AccountWrapper accountWrapper : accountWrappers) {
+            Account masterAccount = accountWrapper.masterAccount;
+            List<Account> accountsToMergeIds = accountWrapper.accountsToMerge;
+            
+            for(Account accountToMergeId : accountsToMergeIds) {
+                Account accountToMerge = new Account(Id = accountToMergeId.Id);
+                accountsToMerge.add(accountToMerge);
+            }
+            
+            // Merge the accounts
+            Database.MergeResult mergeResult = Database.merge(masterAccount, accountsToMerge, false);
+            if(mergeResult.isSuccess()) {
+                system.debug('Accounts merged successfully!');
+            } else {
+                List<Database.MergeResult> mergeResults = new List<Database.MergeResult>{ mergeResult };
+                handleMergeErrors(mergeResults);
+            }
+        }
+    }
+    
+    private static void handleMergeErrors(List<Database.MergeResult> mergeResults) {
+        List<String> errorMessages = new List <String>();
+        
+        for(Database.MergeResult mergeResult : mergeResults) {
+            for(Database.Error error : mergeResult.getErrors()) {
+                errorMessages.add(error.getMessage());
+            }
+        }
+        
+        // Send error messages to the user or handle them as desired
+        // You can use email alerts, add the errors to a custom object or send a notification to an external system
+        
+        if(!errorMessages.isEmpty()) {
+            // Do something with the error messages
+        }
+    }
+    
+    public class AccountWrapper {
+        @InvocableVariable(label='Master Account' required=true)
+        public Account masterAccount;
+        
+        @InvocableVariable(label='Accounts to Merge' required=true)
+        public List<Account> accountsToMerge;
+    }
+}
